@@ -60,7 +60,7 @@ export default function RootLayout({
           title="A2A Agent Definition: Socrates Web3 AI Tutor (Gemini)"
         />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className} suppressHydrationWarning={true}>{children}</body>
     </html>
   );
 }
