@@ -20,7 +20,7 @@ const helloAgentCard: AgentCard = {
   description: "A simple agent that says hello, running on Next.js.",
   protocolVersion: "0.3.0",
   version: "0.1.0",
-  url: "http://localhost:3000/api/a2a",
+  url: process.env.NEXT_PUBLIC_SITE_URL + "/api/a2a" || "http://localhost:3000/api/a2a",
   capabilities: {},
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
