@@ -1,0 +1,37 @@
+{
+  "$schema": "https://a2aproject.org/schemas/ai-agent-v1.json",
+  "name": "소크라테스 Web3 AI 튜터 (Gemini)",
+  "description": "Web3와 AI의 융합(DeAI, ZKML, AI DAO 등)에 대해 소크라테스식 문답법으로 탐구하는 교육 에이전트입니다. (Powered by Gemini)",
+  "author": {
+    "name": "Your Organization Name"
+  },
+  "tags": ["web3", "ai", "education", "socratic-method", "korean", "DeAI", "Gemini"],
+  "interfaces": [
+    {
+      "name": "socratic-dialogue",
+      "type": "api",
+      "endpoint": "/api/dialogue",
+      "methods": ["POST"],
+      "protocol": "http-request-response-v1",
+      "description": "Web3 AI 주제에 대한 소크라테스식 대화를 진행합니다.",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "description": "사용자의 현재 입력" },
+          "history": {
+            "type": "array",
+            "description": "이전 대화 기록 (Format: {role: 'user'|'assistant', content: string})",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": { "type": "string" },
+                "content": { "type": "string" }
+              }
+            }
+          }
+        },
+        "required": ["message", "history"]
+      }
+    }
+  ]
+}
