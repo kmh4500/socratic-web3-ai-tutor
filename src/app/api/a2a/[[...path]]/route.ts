@@ -15,15 +15,22 @@ import { GoogleGenerativeAI } from "@google/generative-ai"; // 👈 Import Gemin
 
 // 1. Define your agent's identity card. (이전과 동일)
 const helloAgentCard: AgentCard = {
-  name: "Hello Agent (Next.js)",
-  description: "A simple agent that says hello, running on Next.js.",
+  name: "Socrates Web3 AI Tutor",
+  description: "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gemini 모델을 활용해 심층적이고 친절하게 설명해주는 AI 에이전트입니다. 대화의 맥락을 기억하며, 사용자의 질문에 맞춰 단계별로 사고를 유도하고, 개념을 쉽게 풀어서 안내합니다. (초기 안내 메시지는 public/prompt.txt에서 불러옵니다)",
   protocolVersion: "0.3.0",
   version: "0.1.0",
   url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/api/a2a",
   capabilities: {},
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  skills: [{ id: "chat", name: "Chat", description: "Say hello", tags: ["chat"] }],
+  skills: [
+    {
+      id: "chat",
+      name: "Socratic Dialogue",
+      description: "질문을 통해 사고를 유도하고, Web3/AI/블록체인 등 다양한 주제를 쉽게 설명합니다.",
+      tags: ["chat", "socratic", "web3", "ai", "blockchain"]
+    }
+  ],
 };
 
 
