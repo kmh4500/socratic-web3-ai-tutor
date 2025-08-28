@@ -13,14 +13,13 @@ import {
 const AGENT_CARD_PATH = ".well-known/agent-card.json";
 import { GoogleGenerativeAI } from "@google/generative-ai"; // 👈 Import Gemini SDK
 
-
 // 1. Define your agent's identity card. (이전과 동일)
 const helloAgentCard: AgentCard = {
   name: "Hello Agent (Next.js)",
   description: "A simple agent that says hello, running on Next.js.",
   protocolVersion: "0.3.0",
   version: "0.1.0",
-  url: process.env.NEXT_PUBLIC_SITE_URL + "/api/a2a" || "http://localhost:3000/api/a2a",
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/api/a2a",
   capabilities: {},
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
@@ -33,48 +32,91 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }); //
 
 // 2. Implement the agent's logic. (이전과 동일)
 class HelloExecutor implements AgentExecutor {
+    // 히스토리 저장용 (메모리 예시, 실제 서비스는 DB 등 사용 권장)
+    private static historyStore: Record<string, Message[]> = {};
+
     async execute(
         requestContext: RequestContext,
         eventBus: ExecutionEventBus
     ): Promise<void> {
-        // 2. Extract the user's message from the request
+        // 1. 프롬프트 파일에서 초기화 메시지 불러오기 (public/prompt.txt를 fetch로 읽기)
+        let initialPrompt = "안녕하세요! 무엇이 궁금하신가요?";
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/prompt.txt`);
+            if (res.ok) {
+                initialPrompt = await res.text();
+            } else {
+                console.warn("프롬프트 파일을 불러올 수 없습니다. 기본값 사용.");
+            }
+        } catch (e) {
+            console.warn("프롬프트 파일을 불러올 수 없습니다. 기본값 사용.");
+        }
+
+        // 2. 히스토리 불러오기 및 저장
+        const contextId = requestContext.contextId;
+        if (!HelloExecutor.historyStore[contextId]) {
+            HelloExecutor.historyStore[contextId] = [];
+        }
+        const history = HelloExecutor.historyStore[contextId];
+
+        // 3. 유저 메시지 추출
         const incomingMessage = requestContext.userMessage;
-        const firstPart = incomingMessage?.parts[0];
-        const userPrompt = (firstPart?.kind === 'text') ? firstPart.text : "Hello";
+        if (incomingMessage) {
+            history.push(incomingMessage);
+        }
+
+        // 4. 첫 메시지라면 초기 프롬프트 반환 (X)
+        // 학생의 첫 질문이 들어오면 바로 Gemini API 호출
+
+        // 5. Gemini API 호출
+        // system 역할 없이, 첫 user 메시지 앞에 프롬프트를 user 역할로 추가
+        const geminiMessages = [
+            { role: "user", parts: [{ text: initialPrompt }] },
+            ...history
+                .filter(msg => msg.role === "user" || msg.role === "agent")
+                .map(msg => ({
+                    role: msg.role === "user" ? "user" : "model",
+                    parts: [{ text: msg.parts[0]?.kind === "text" ? msg.parts[0].text : "" }]
+                })),
+        ];
 
         try {
-            // 3. Call the Gemini API
-            const result = await model.generateContent(userPrompt);
+            const result = await model.generateContent({
+                contents: geminiMessages
+            });
             const geminiResponse = await result.response;
             const geminiText = geminiResponse.text();
 
-            // 4. Create the response message with Gemini's output
             const responseMessage: Message = {
                 kind: "message",
                 messageId: uuidv4(),
                 role: "agent",
                 parts: [{ kind: "text", text: geminiText }],
-                contextId: requestContext.contextId,
+                contextId,
             };
-
-            // 5. Publish the response and finish
+            history.push(responseMessage);
             eventBus.publish(responseMessage);
-
         } catch (error) {
             console.error("Error calling Gemini API:", error);
-            // Handle API errors gracefully
             const errorMessage: Message = {
                 kind: "message",
                 messageId: uuidv4(),
                 role: "agent",
                 parts: [{ kind: "text", text: "Sorry, I encountered an error while contacting the AI model." }],
-                contextId: requestContext.contextId,
+                contextId,
             };
+            history.push(errorMessage);
             eventBus.publish(errorMessage);
         } finally {
             eventBus.finished();
         }
     }
+
+    // 히스토리 조회 메서드 (필요시 활용)
+    static getHistory(contextId: string): Message[] {
+        return HelloExecutor.historyStore[contextId] || [];
+    }
+
     cancelTask = async (): Promise<void> => {};
 }
 
