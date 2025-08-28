@@ -5,7 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { A2AClient } from "@a2a-js/sdk/client";
 import { SendMessageSuccessResponse } from "@a2a-js/sdk";
 import { Message, MessageSendParams, TextPart } from "@a2a-js/sdk";
-export const A2A_API_PREFIX = "/api/a2a";
+
+const A2A_API_PREFIX = "/api/a2a";
 
 // 에이전트 카드 검색(Discovery) URL 정의
 const AGENT_CARD_PATH = `${A2A_API_PREFIX}/.well-known/agent-card.json`;
@@ -79,13 +80,15 @@ export default function Home() {
       }
 
       // Message 타입 판별 함수 (로컬 구현)
-      function isMessage(obj: any): obj is Message {
-        return obj && typeof obj === "object" && obj.kind === "message" && typeof obj.messageId === "string";
+      function isMessage(obj: unknown): obj is Message {
+        return Boolean(obj && typeof obj === "object" && obj !== null && 
+               'kind' in obj && (obj as Record<string, unknown>).kind === "message" && 
+               'messageId' in obj && typeof (obj as Record<string, unknown>).messageId === "string");
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('A2A communication error:', error);
-      setError(`통신 오류: ${error.message}`);
+      setError(`통신 오류: ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }

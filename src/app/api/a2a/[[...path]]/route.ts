@@ -91,9 +91,9 @@ const jsonRpcTransportHandler = new JsonRpcTransportHandler(requestHandler);
 
 export async function GET(
     request: NextRequest,
-    context: { params: { path?: string[] } }
+    context: { params: Promise<{ path?: string[] }> }
 ) {
-    const { params } = await context;
+    const { params } = context;
     const resolvedParams = await params;
     const currentPath = resolvedParams.path?.join('/') || '';
 
@@ -102,7 +102,7 @@ export async function GET(
         try {
             const agentCard = await requestHandler.getAgentCard();
             return NextResponse.json(agentCard);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error fetching agent card:", error);
             return NextResponse.json(
                 { error: "Failed to retrieve agent card" },
@@ -117,9 +117,9 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    context: { params: { path?: string[] } }
+    context: { params: Promise<{ path?: string[] }> }
 ) {
-    const { params } = await context;
+    const { params } = context;
     const resolvedParams = await params;
     const currentPath = resolvedParams.path?.join('/') || '';
 
@@ -131,7 +131,7 @@ export async function POST(
             const rpcResponseOrStream = await jsonRpcTransportHandler.handle(body);
 
             // 결과가 스트림(AsyncGenerator)인지 확인합니다.
-            if (typeof (rpcResponseOrStream as any)?.[Symbol.asyncIterator] === 'function') {
+            if (typeof (rpcResponseOrStream as unknown as Record<string | symbol, unknown>)?.[Symbol.asyncIterator] === 'function') {
                 const stream = rpcResponseOrStream as AsyncGenerator<JSONRPCSuccessResponse, void, undefined>;
 
                 // SSE(Server-Sent Events) 스트림 생성
@@ -141,9 +141,9 @@ export async function POST(
                             for await (const event of stream) {
                                 controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
                             }
-                        } catch (streamError: any) {
+                        } catch (streamError: unknown) {
                             console.error(`Error during SSE streaming (request ${body?.id}):`, streamError);
-                            const a2aError = streamError instanceof A2AError ? streamError : A2AError.internalError(streamError.message || 'Streaming error.');
+                            const a2aError = streamError instanceof A2AError ? streamError : A2AError.internalError((streamError as Error).message || 'Streaming error.');
                             const errorResponse: JSONRPCErrorResponse = {
                                 jsonrpc: '2.0',
                                 id: body?.id || null,
@@ -169,7 +169,7 @@ export async function POST(
                 const rpcResponse = rpcResponseOrStream as JSONRPCResponse;
                 return NextResponse.json(rpcResponse);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Unhandled error in A2A POST handler:", error);
             const a2aError = error instanceof A2AError ? error : A2AError.internalError('General processing error.');
             const errorResponse: JSONRPCErrorResponse = {
