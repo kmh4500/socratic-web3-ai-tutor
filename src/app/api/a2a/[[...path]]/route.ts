@@ -35,7 +35,7 @@ const helloAgentCard: AgentCard = {
 
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }); // 👈 Gemini 모델 설정
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // 👈 Gemini 모델 설정
 
 // 2. Implement the agent's logic. (이전과 동일)
 class HelloExecutor implements AgentExecutor {
@@ -63,6 +63,15 @@ class HelloExecutor implements AgentExecutor {
         const contextId = requestContext.contextId;
         if (!HelloExecutor.historyStore[contextId]) {
             HelloExecutor.historyStore[contextId] = [];
+            // 첫 번째 컨텍스트 생성 시 초기 프롬프트를 시스템 메시지로 추가
+            const initialMessage: Message = {
+                kind: "message",
+                messageId: uuidv4(),
+                role: "user",
+                parts: [{ kind: "text", text: initialPrompt }],
+                contextId,
+            };
+            HelloExecutor.historyStore[contextId].push(initialMessage);
         }
         const history = HelloExecutor.historyStore[contextId];
 
@@ -76,17 +85,14 @@ class HelloExecutor implements AgentExecutor {
         // 학생의 첫 질문이 들어오면 바로 Gemini API 호출
 
         // 5. Gemini API 호출
-        // system 역할 없이, 첫 user 메시지 앞에 프롬프트를 user 역할로 추가
-        const geminiMessages = [
-            { role: "user", parts: [{ text: initialPrompt }] },
-            ...history
-                .filter(msg => msg.role === "user" || msg.role === "agent")
-                .map(msg => ({
-                    role: msg.role === "user" ? "user" : "model",
-                    parts: [{ text: msg.parts[0]?.kind === "text" ? msg.parts[0].text : "" }]
-                })),
-        ];
-
+        // 히스토리에서 메시지들을 Gemini 형식으로 변환
+        const geminiMessages = history.map(msg => {
+            const textPart = msg.parts.find(part => part.kind === "text");
+            return { 
+                role: msg.role === "user" ? "user" : "model",
+                parts: [{ text: textPart?.text || "" }]
+            };
+        });
         try {
             const result = await model.generateContent({
                 contents: geminiMessages
