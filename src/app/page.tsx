@@ -53,9 +53,12 @@ export default function Home() {
       // UI 업데이트 (에이전트 응답 추가)
       setHistory(prev => [...prev, agentMessage]);
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to communicate with agent:', error);
-      const errorMessage: Message = { role: 'assistant', content: `오류가 발생했습니다: ${error.message}` };
+      const errorMessage: Message = { 
+        role: 'assistant', 
+        content: `오류가 발생했습니다: ${(error as Error).message}` 
+      };
       setHistory(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -75,7 +78,7 @@ export default function Home() {
             <div className="text-center text-gray-600 mt-10 p-6 border rounded-lg bg-white shadow-sm">
                 <h2 className="text-lg font-medium mb-3">Web3와 AI의 융합에 대한 탐구를 시작해 봅시다.</h2>
                 <p>저는 답 대신 여러분이 스스로 생각할 수 있는 질문을 던집니다. (Powered by Gemini)</p>
-                <p className="mt-3 text-sm italic">(예: "탈중앙화된 AI(DeAI)가 왜 필요한가요?")</p>
+                <p className="mt-3 text-sm italic">(예: &quot;탈중앙화된 AI(DeAI)가 왜 필요한가요?&quot;)</p>
             </div>
         ) : (
           history.map((msg, index) => (
