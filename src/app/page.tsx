@@ -9,7 +9,7 @@ import { Message, MessageSendParams, TextPart } from "@a2a-js/sdk";
 const A2A_API_PREFIX = "/api/a2a";
 
 // 에이전트 카드 검색(Discovery) URL 정의
-const AGENT_CARD_PATH = `${A2A_API_PREFIX}/.well-known/agent-card.json`;
+const AGENT_CARD_PATH = `${A2A_API_PREFIX}/.well-known/agent.json`;
 
 export default function Home() {
   const [history, setHistory] = useState<Message[]>([]);

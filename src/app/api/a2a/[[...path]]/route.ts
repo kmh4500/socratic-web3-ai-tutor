@@ -10,7 +10,7 @@ import {
     JsonRpcTransportHandler,
     A2AError,
 } from "@a2a-js/sdk/server";
-const AGENT_CARD_PATH = ".well-known/agent-card.json";
+const AGENT_CARD_PATH = ".well-known/agent.json";
 import { GoogleGenerativeAI } from "@google/generative-ai"; // 👈 Import Gemini SDK
 
 // 1. Define your agent's identity card. (이전과 동일)
